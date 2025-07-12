@@ -1,0 +1,97 @@
+name: Selenium Tests CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        browser: [chrome, firefox]
+        test-suite: [simple, full]
+        
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+        
+    - name: Install Chrome Browser
+      if: matrix.browser == 'chrome'
+      uses: browser-actions/setup-chrome@latest
+      
+    - name: Install Firefox Browser
+      if: matrix.browser == 'firefox'
+      uses: browser-actions/setup-firefox@latest
+      
+    - name: Compile Project
+      run: mvn clean compile
+      
+    - name: Run Simple Framework Tests
+      if: matrix.test-suite == 'simple'
+      run: |
+        mvn test -f simple-pom.xml \
+          -Dsurefire.suiteXmlFiles=src/test/resources/simple-testng.xml \
+          -Dbrowser=${{ matrix.browser }} \
+          -Dheadless=true
+          
+    - name: Run Full Framework Tests
+      if: matrix.test-suite == 'full'
+      run: |
+        mvn test \
+          -Dbrowser=${{ matrix.browser }} \
+          -Dheadless=true
+          
+    - name: Generate Test Report
+      if: always()
+      run: |
+        echo "Test execution completed for ${{ matrix.browser }} browser using ${{ matrix.test-suite }} framework"
+        
+    - name: Upload Test Reports
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-reports-${{ matrix.browser }}-${{ matrix.test-suite }}
+        path: |
+          test-output/
+          target/surefire-reports/
+          
+    - name: Upload Screenshots on Failure
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: failure-screenshots-${{ matrix.browser }}-${{ matrix.test-suite }}
+        path: test-output/screenshots/
+
+  notification:
+    needs: test
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Test Results Summary
+      run: |
+        echo "## Test Execution Summary 📊" >> $GITHUB_STEP_SUMMARY
+        echo "| Browser | Framework | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|---------|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Chrome  | Simple    | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Chrome  | Full      | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Firefox | Simple    | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Firefox | Full      | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="SeleniumPOMFramework" parallel="methods" thread-count="3">
+    <listeners>
+        <listener class-name="com.selenium.utils.TestListener"/>
+    </listeners>
+    
+    <test name="LoginTests">
+        <classes>
+            <class name="com.selenium.tests.LoginTest"/>
+        </classes>
+    </test>
+    
+    <test name="DataDrivenLoginTests">
+        <classes>
+            <class name="com.selenium.tests.DataDrivenLoginTest"/>
+        </classes>
+    </test>
+</suite>
