@@ -2,8 +2,8 @@ pipeline {
     agent any
     
     tools {
-        maven 'Maven-3.9.0' // Configure this name in Jenkins Global Tool Configuration
-        jdk 'JDK-17' // Configure this name in Jenkins Global Tool Configuration
+        jdk 'Java 11' // Using the Java 11 installation that Jenkins detected
+        // Maven will use system installation via PATH
     }
     
     environment {
@@ -56,6 +56,13 @@ pipeline {
                     echo "Test Type: ${params.TEST_TYPE}"
                     echo "Browser: ${params.BROWSER_TYPE}"
                     echo "Headless: ${params.RUN_HEADLESS}"
+                    
+                    // Check Java and Maven availability
+                    sh 'java -version'
+                    sh 'mvn -version'
+                    sh 'echo "JAVA_HOME: $JAVA_HOME"'
+                    sh 'which java'
+                    sh 'which mvn'
                 }
             }
         }
