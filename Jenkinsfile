@@ -3,10 +3,12 @@ pipeline {
     
     tools {
         jdk 'Java 11' // Using the Java 11 installation that Jenkins detected
-        // Maven will use system installation via PATH
     }
     
     environment {
+        // Add Maven to PATH
+        PATH = "/opt/homebrew/bin:${env.PATH}"
+        
         // Browser configuration
         BROWSER = 'chrome'
         HEADLESS = 'true'
